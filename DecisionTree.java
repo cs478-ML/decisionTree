@@ -243,6 +243,10 @@ public class DecisionTree extends SupervisedLearner {
 			attributes.add((double) i);
 		}
 		
+		//this line assumes that if the first column is continuous that all of the data is continuous
+		if (features.valueCount(0) == 0)
+			discretizeData(features);
+		
 		rootNode = new Node();
 		makeTree(features, labels, attributes, rootNode);
 		
@@ -270,5 +274,20 @@ public class DecisionTree extends SupervisedLearner {
 	}
 	
 	
-
+	private void discretizeData (Matrix features) {
+		int numberOfAttributes = features.cols();
+		
+		for (int c = 0; c < features.cols(); c++) {
+			double mean = features.columnMean(c);
+						
+			for (int r = 0; r < features.rows(); r++) {
+				
+				//DISCO-TIZE!
+				if (features.get(r, c) > mean)
+					features.set(r, c, 1);
+				else
+					features.set(r, c, 0);
+			}
+		}
+	}
 }

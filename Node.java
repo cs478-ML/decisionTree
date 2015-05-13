@@ -4,6 +4,7 @@ import java.util.ArrayList;
 public class Node {
 	
 	private String attribute;
+	private String attributeValue;
 	private ArrayList<Node> children;
 	private int instances;
 	
@@ -31,6 +32,17 @@ public class Node {
 	}
 	public String getAttribute(){
 		return attribute;
+	}
+	public void setAttVal(String attval){
+		attributeValue = attval;
+	}
+	
+	public String print(){
+		String tree = "\n" + attributeValue + "\n" + attribute + "\n";
+		for(Node n : children){
+			tree = tree + "	" + n.print();
+		}
+		return tree;
 	}
 
 }

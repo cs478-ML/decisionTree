@@ -81,7 +81,7 @@ public class DecisionTree extends SupervisedLearner {
 			}
 			else {
 				try {
-					featurePrtns.get(attrID).add(labels, i, 0, 1);
+					featurePrtns.get(attrID).add(features, i, 0, 1);
 				}
 				catch (Exception e){
 					System.out.println("Error trying to add to a matrix");
@@ -100,6 +100,7 @@ public class DecisionTree extends SupervisedLearner {
 		//recursive calls on the matrices
 		for(Double d : labelPrtns.keySet()){
 			Node newNode = new Node();
+			newNode.setAttVal(features.attrValue((int) splittingAtt, d.intValue()));
 			currNode.addChild(newNode);
 			makeTree(featurePrtns.get(d), labelPrtns.get(d), attributes, newNode);
 		}
@@ -249,6 +250,7 @@ public class DecisionTree extends SupervisedLearner {
 		
 		rootNode = new Node();
 		makeTree(features, labels, attributes, rootNode);
+		System.out.println(rootNode.print());
 		
 		// TODO Auto-generated method stub
 //		System.out.println("------------Features------------");

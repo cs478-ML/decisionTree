@@ -12,14 +12,19 @@ public class DecisionTree extends SupervisedLearner {
 		rootNode = null;
 	}
 	
-	private Node makeTree(Matrix features, Matrix labels, ArrayList<Double> attributes){ 
+	private void makeTree(Matrix features, Matrix labels, ArrayList<Double> attributes, Node currNode){ 
 		
-		Node commonNode = sameLabelNode(features, labels);
-		if(commonNode != null){ //All features have the same label
-			return commonNode;
+		String commonNodeLabel = sameLabelNode(features, labels);
+		if(commonNodeLabel != null){ //All features have the same label
+			currNode.setAttribute(commonNodeLabel);
+			currNode.addInstances(labels.rows());
+			return;
 		}
-		if(features.cols() == 0){//There are no more properties
-			return maxFeature(features, labels);
+		if(attributes.size() == 0){//There are no more properties
+			currNode.addInstances(labels.rows());
+			Node n = maxFeature(features, labels);
+			currNode.setAttribute(n.getAttribute());
+			return;
 		}
 		
 		//Passed Base cases:
@@ -50,6 +55,8 @@ public class DecisionTree extends SupervisedLearner {
 				splittingAtt = d;
 			}
 		}
+		
+		currNode.setAttribute(features.attrName((int) splittingAtt));
 		
 		TreeMap<Double, Matrix> labelPrtns = new TreeMap<Double, Matrix>();
 		TreeMap<Double, Matrix> featurePrtns = new TreeMap<Double, Matrix>();
@@ -92,15 +99,16 @@ public class DecisionTree extends SupervisedLearner {
 		
 		//recursive calls on the matrices
 		for(Double d : labelPrtns.keySet()){
-			makeTree(featurePrtns.get(d), labelPrtns.get(d), attributes);
+			Node newNode = new Node();
+			currNode.addChild(newNode);
+			makeTree(featurePrtns.get(d), labelPrtns.get(d), attributes, newNode);
 		}
-	
-		return null;
+		return;
 	}
 	
 	//Function that checks if all the features have the same label
 	// Returns a node with the common label or null if none exists
-	private Node sameLabelNode(Matrix features, Matrix labels){
+	private String sameLabelNode(Matrix features, Matrix labels){
 		
 		double[] currLabelRow = labels.row(0);
 		double currNum = currLabelRow[0];
@@ -110,14 +118,14 @@ public class DecisionTree extends SupervisedLearner {
 			sameLabels = false;
 			currLabelRow = labels.row(i);
 			if(currNum != currLabelRow[0]){
-				System.out.println("Not all the same");
+				//System.out.println("Not all the same");
 				break;
 			}
 			sameLabels = true;
 		}
 		
 		if(sameLabels){
-			return new Node(labels.m_enum_to_str.get(0).get((int)currNum));
+			return labels.m_enum_to_str.get(0).get((int)currNum);
 		}
 		else
 			return null;
@@ -235,7 +243,8 @@ public class DecisionTree extends SupervisedLearner {
 			attributes.add((double) i);
 		}
 		
-		makeTree(features, labels, attributes);
+		rootNode = new Node();
+		makeTree(features, labels, attributes, rootNode);
 		
 		// TODO Auto-generated method stub
 //		System.out.println("------------Features------------");

@@ -2,26 +2,25 @@ import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-
-
 public class DecisionTree extends SupervisedLearner {
 	
-	private Node rootNode;
+	private Node rootNode = new Node();
+	private boolean ENTROPY = false;
 	
-	public DecisionTree(){
-		rootNode = null;
-	}
-	
-	private void makeTree(Matrix features, Matrix labels, ArrayList<Double> attributes, Node currNode, boolean entropy){ 
+	private void makeTree(Matrix features, Matrix labels, ArrayList<Double> attributes, Node currNode){
 		
 		String commonNodeLabel = sameLabelNode(features, labels);
-		if(commonNodeLabel != null){ //All features have the same label
+				
+		//All features have the same label
+		if(commonNodeLabel != null){ 
 			currNode.setName(commonNodeLabel);
 			currNode.addInstances(labels.rows());
 			currNode.setAttrID(labels.m_str_to_enum.get(0).get(commonNodeLabel));
 			return;
 		}
-		if(attributes.size() == 0){//There are no more properties
+		
+		//There are no more properties
+		if(attributes.size() == 0){
 			currNode.addInstances(labels.rows());
 			Node n = maxFeature(features, labels);
 			currNode.setName(n.getName());
@@ -29,17 +28,15 @@ public class DecisionTree extends SupervisedLearner {
 			return;
 		}
 		
-		//Passed Base cases:
-		
 		double splittingAtt = -1;
 		
-		if(entropy){
+		if (ENTROPY) {
 		
 			TreeMap<Double, Double> attrEntropy = new TreeMap<Double, Double>();
 			
-			for(int i = 0; i < features.cols(); i++){
-				double tempGain = calcInfoGain(features, labels, i);
-				attrEntropy.put((double)i, tempGain);
+			for(int i = 0; i < attributes.size(); i++){
+				double tempGain = Criterion.calcInfoGain(features, labels, attributes.get(i).intValue());
+				attrEntropy.put(attributes.get(i), tempGain);
 			}
 			
 			double minGain = Double.MAX_VALUE;
@@ -58,7 +55,7 @@ public class DecisionTree extends SupervisedLearner {
 			TreeMap<Double, Double> attrAccuracy = new TreeMap<Double, Double>();
 			
 			for(int i = 0; i < attributes.size(); i++){
-				double tempGain = calcAccGain(features, labels, attributes.get(i).intValue());
+				double tempGain = Criterion.calcAccGain(features, labels, attributes.get(i).intValue());
 				attrAccuracy.put(attributes.get(i), tempGain);
 			}
 			
@@ -72,63 +69,57 @@ public class DecisionTree extends SupervisedLearner {
 					splittingAtt = d;
 				}
 			}
-
 		}
 		
+		// we decided on a splitting attribute.  Put that info in the node.
 		currNode.setName(features.attrName((int) splittingAtt));
 		currNode.setAttrID(splittingAtt);
 		
 		TreeMap<Double, Matrix> labelPrtns = new TreeMap<Double, Matrix>();
 		TreeMap<Double, Matrix> featurePrtns = new TreeMap<Double, Matrix>();
 		
-		for(int i = 0; i < features.rows(); i++){////////changed the index here
+		for(int i = 0; i < features.rows(); i++){
+			
 			double[] r = features.row(i);
 			double valueID = r[(int) splittingAtt];
-			if(!labelPrtns.containsKey(valueID)){
-				labelPrtns.put(valueID, new Matrix(labels, i, 0, 1, 1));
-			}
-			else {
-				try {
+			
+			try {
+				//add to label partition
+				if(!labelPrtns.containsKey(valueID))
+					labelPrtns.put(valueID, new Matrix(labels, i, 0, 1, 1));
+				else
 					labelPrtns.get(valueID).add(labels, i, 0, 1);
-				} 
-				catch (Exception e) {
-					System.out.println("Error trying to add to a matrix");
-					e.printStackTrace();
-				}
-			}
-			if(!featurePrtns.containsKey(valueID)){
-				featurePrtns.put(valueID, new Matrix(features, i, 0, 1, features.cols()));
-			}
-			else {
-				try {
-					featurePrtns.get(valueID).add(features, i, 0, 1);
-				}
-				catch (Exception e){
-					System.out.println("Error trying to add to a matrix");
-					e.printStackTrace();
-				}
+				
+				//add to features partition
+				if(!featurePrtns.containsKey(valueID))
+					featurePrtns.put(valueID, new Matrix(features, i, 0, 1, features.cols()));
+				else
+					featurePrtns.get(valueID).add(features, i, 0, 1);					
+
+			} catch (Exception e){
+				System.out.println("Error trying to add to a matrix");
+				e.printStackTrace();
 			}
 		}
 		
-		//create the new list of attributes we are interested in
-		for(int i = 0; i < attributes.size(); i++){
-			if(attributes.get(i) == splittingAtt){
-				attributes.remove(i);
+		//Make a copy of the attributes list so it doesn't get messed up from the children
+		ArrayList<Double> newAttributeList = new ArrayList<Double>(attributes);
+		
+		//remove the attribute that we are not interested in
+		for(int i = 0; i < newAttributeList.size(); i++){
+			if(newAttributeList.get(i) == splittingAtt){
+				newAttributeList.remove(i);
 			}
 		}
 		
 		//recursive calls on the matrices
 		for(Double d : labelPrtns.keySet()){
 			
-			//Make a copy of the attributes list so it doesn't get messed up from the children
-			ArrayList<Double> newAttributeList = new ArrayList<Double>(attributes);
-			
 			Node newNode = new Node();
 			newNode.setParent(features.attrValue((int) splittingAtt, d.intValue()));
 			currNode.addChild(newNode);
-			makeTree(featurePrtns.get(d), labelPrtns.get(d), newAttributeList, newNode, entropy);
+			makeTree(featurePrtns.get(d), labelPrtns.get(d), newAttributeList, newNode);
 		}
-		return;
 	}
 	
 	//Function that checks if all the features have the same label
@@ -187,130 +178,6 @@ public class DecisionTree extends SupervisedLearner {
 		return new Node(labels.m_enum_to_str.get(0).get((int)maxLabel));
 	}
 
-	//Calculates the accuracy of a given data set
-	private double calcAccuracy(Matrix labels){
-		
-		double accuracy = 0;
-		
-		double totalInstances = labels.rows();
-		
-		TreeMap<Double, Integer> labelInstances = new TreeMap<Double, Integer>();
-		
-		for(int i = 0; i < labels.rows(); i++){
-			double[] r = labels.row(i);
-			if(labelInstances.containsKey(r[0])){
-				int num = labelInstances.get(r[0]);
-				labelInstances.put(r[0], num + 1);
-			}
-			else {
-				labelInstances.put(r[0], 1);
-			}
-		}
-		
-		double majority = -1;
-		
-		for(Double d : labelInstances.keySet()){
-			if(majority < labelInstances.get(d)){
-				majority = labelInstances.get(d);
-			}
-		}
-		
-		accuracy = majority / totalInstances;
-		
-		return accuracy;
-	}
-	
-	//Calculates the accuracy gain when splitting on a given attribute
-	private double calcAccGain(Matrix features, Matrix labels, int attrIndex){
-		
-		double accGain = 0;
-		
-		TreeMap<Double, Matrix> partition = new TreeMap<Double, Matrix>();
-		
-		for(int i = 0; i < features.rows(); i++){
-			double[] r = features.row(i);
-			if(!partition.containsKey(r[attrIndex])){
-				partition.put(r[attrIndex], new Matrix(labels, i, 0, 1, 1));
-			}
-			else {
-				try {
-					partition.get(r[attrIndex]).add(labels, i, 0, 1);
-				} 
-				catch (Exception e) {
-					System.out.println("Error trying to add to a matrix");
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		double totalAttributes = labels.rows();
-		
-		for(Double d : partition.keySet()){
-			double numerator = partition.get(d).rows();
-			double proportion = numerator / totalAttributes;
-			accGain += proportion * calcAccuracy(partition.get(d));
-		}
-		
-		return accGain;
-	}
-	//Calculates the entropy for a given attribute for each class
-	private double calcEntropy(Matrix labels){
-		
-		double entropy = 0;
-		
-		double totalInstances = labels.rows();
-		TreeMap<Double, Integer> labelInstances = new TreeMap<Double, Integer>();
-		
-		for(int i = 0; i < labels.rows(); i++){
-			double[] r = labels.row(i);
-			if(labelInstances.containsKey(r[0])){
-				int num = labelInstances.get(r[0]);
-				labelInstances.put(r[0], num + 1);
-			}
-			else {
-				labelInstances.put(r[0], 1);
-			}
-		}
-		
-		for(Double d : labelInstances.keySet()){
-			double proportion = labelInstances.get(d)/totalInstances;
-			entropy = entropy - proportion * (Math.log(proportion) / Math.log(2));
-		}
-		
-		return entropy;
-	}
-	
-	private double calcInfoGain(Matrix features, Matrix labels, int attrIndex){
-		
-		double infoGain = 0;
-		
-		TreeMap<Double, Matrix> partition = new TreeMap<Double, Matrix>();
-		
-		for(int i = 0; i < features.rows(); i++){////////changed the index here
-			double[] r = features.row(i);
-			if(!partition.containsKey(r[attrIndex])){
-				partition.put(r[attrIndex], new Matrix(labels, i, 0, 1, 1));
-			}
-			else {
-				try {
-					partition.get(r[attrIndex]).add(labels, i, 0, 1);
-				} 
-				catch (Exception e) {
-					System.out.println("Error trying to add to a matrix");
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		double totalAttributes = labels.rows();
-		
-		for(Double d : partition.keySet()){
-			double numerator = partition.get(d).rows();
-			double proportion = numerator / totalAttributes;
-			infoGain += proportion * calcEntropy(partition.get(d));
-		}
-		return infoGain;
-	}
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
 		
@@ -320,17 +187,12 @@ public class DecisionTree extends SupervisedLearner {
 			attributes.add((double) i);
 		}
 		
-		//this line assumes that if the first column is continuous that all of the data is continuous
-		if (features.valueCount(0) == 0)
-			discretizeData(features);
-
+		if (features.valueCount(0) == 0) discretizeData(features);
 		
-		boolean entropy = true;
+		makeTree(features, labels, attributes, rootNode);
 		
-		rootNode = new Node();
-		makeTree(features, labels, attributes, rootNode, entropy);
+		// print out our tree
 		System.out.println(rootNode.print());
-
 	}
 
 	@Override
@@ -389,44 +251,3 @@ public class DecisionTree extends SupervisedLearner {
 		
 	}
 }
-
-
-//		double ent = calcEntropy(labels);
-//		System.out.println("Entropy of the system: " + ent);
-
-//		double acc = calcAccuracy(labels);
-//		System.out.println("Accuracy of the data: " + acc);
-
-/*		
-	//print the map for Entropy
-for(Entry<Double, Double> label : attrEntropy.entrySet()) {
-      Double key = label.getKey();
-      Double value = label.getValue();
-
-      System.out.println(key + " => " + value);
-}
-*/
-
-//System.out.println("------------Features------------");
-//features.print();
-//System.out.println("attribute list");
-//for(int i = 0; i < features.m_attr_name.size(); i++){
-//	System.out.println(features.m_attr_name.get(i));
-//}
-
-//System.out.println("------------Labels------------");
-//labels.print();
-//System.out.println("attribute list");
-//for(int i = 0; i < labels.m_attr_name.size(); i++){
-//	System.out.println(labels.m_attr_name.get(i));
-//}
-
-//Print out the occurrence map for Node maxFeature()
-//for(Entry<Double, Integer> label : occurrences.entrySet()) {
-//    Double key = label.getKey();
-//    Integer value = label.getValue();
-//
-//    System.out.println(key + " => " + value);
-//}
-//
-//System.out.println("m_enum_to_str : " + labels.m_enum_to_str.get(0).get((int)maxLabel));

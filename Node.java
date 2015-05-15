@@ -40,23 +40,29 @@ public class Node {
 	}
 	
 	public String print(){
-		String tree = "\n" + parent + "\n" + name + "(" + attrID + ")\n		instances: " + instances;
+		String tree = "\n" + name + "(" + attrID + ")\n\t parent: " + parent;
+		
 		for(Node n : children){
 			tree = tree + "	" + n.print();
 		}
 		return tree;
 	}
+	
 	public void setAttrID(double id){
 		attrID = id;
 	}
 	
-	public double classify(double[] sample){
-		
+	public double classify(double[] sample){		
 		if(instances != -1){
 			return attrID;
 		}
 		else {
 			double nextNodeIndex = sample[(int)attrID];
+			
+			if (nextNodeIndex > children.size() - 1) {
+				nextNodeIndex = children.size() - 1;
+			}
+			
 			return children.get((int)nextNodeIndex).classify(sample);
 		}
 	}

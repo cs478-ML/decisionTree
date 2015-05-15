@@ -40,7 +40,7 @@ public class Node {
 	}
 	
 	public String print(){
-		String tree = "\n" + parent + "\n" + name + "(" + attrID + ")\n";
+		String tree = "\n" + parent + "\n" + name + "(" + attrID + ")\n		instances: " + instances;
 		for(Node n : children){
 			tree = tree + "	" + n.print();
 		}

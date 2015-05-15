@@ -119,10 +119,14 @@ public class DecisionTree extends SupervisedLearner {
 		
 		//recursive calls on the matrices
 		for(Double d : labelPrtns.keySet()){
+			
+			//Make a copy of the attributes list so it doesn't get messed up from the children
+			ArrayList<Double> newAttributeList = new ArrayList<Double>(attributes);
+			
 			Node newNode = new Node();
 			newNode.setParent(features.attrValue((int) splittingAtt, d.intValue()));
 			currNode.addChild(newNode);
-			makeTree(featurePrtns.get(d), labelPrtns.get(d), attributes, newNode, entropy);
+			makeTree(featurePrtns.get(d), labelPrtns.get(d), newAttributeList, newNode, entropy);
 		}
 		return;
 	}
@@ -179,17 +183,6 @@ public class DecisionTree extends SupervisedLearner {
 				maxLabel = d;
 			}
 		}
-		
-		
-		//Print out the occurrence map
-//		for(Entry<Double, Integer> label : occurrences.entrySet()) {
-//            Double key = label.getKey();
-//            Integer value = label.getValue();
-//
-//            System.out.println(key + " => " + value);
-//		}
-//		
-//		System.out.println("m_enum_to_str : " + labels.m_enum_to_str.get(0).get((int)maxLabel));
 
 		return new Node(labels.m_enum_to_str.get(0).get((int)maxLabel));
 	}
@@ -330,15 +323,9 @@ public class DecisionTree extends SupervisedLearner {
 		//this line assumes that if the first column is continuous that all of the data is continuous
 		if (features.valueCount(0) == 0)
 			discretizeData(features);
+
 		
-//		System.out.println("------------Features------------");
-//		features.print();
-//		System.out.println("attribute list");
-//		for(int i = 0; i < features.m_attr_name.size(); i++){
-//			System.out.println(features.m_attr_name.get(i));
-//		}
-		
-		boolean entropy = false;
+		boolean entropy = true;
 		
 		rootNode = new Node();
 		makeTree(features, labels, attributes, rootNode, entropy);
@@ -349,20 +336,17 @@ public class DecisionTree extends SupervisedLearner {
 	@Override
 	public void predict(double[] features, double[] labels) throws Exception {
 		// TODO Auto-generated method stub
-		System.out.println("Features length: " + features.length);
-		System.out.println("Labels length: " + labels.length);
-		for(Double d : features){
-			System.out.println(d);
+		System.out.println("Features: ");
+		for(int i = 0; i < features.length; i++){
+			System.out.println(features[i]);
 		}
 		double prediction = rootNode.classify(features);
-		System.out.println("Ours: " + prediction);
 		labels[0] = prediction;
 		
 	}
 	
 	
 	private void discretizeData (Matrix features) {
-		int numberOfAttributes = features.cols();
 		
 //		for (int c = 0; c < features.cols(); c++) {
 //			double min = features.columnMin(c);
@@ -394,7 +378,15 @@ public class DecisionTree extends SupervisedLearner {
 				else
 					features.set(r, c, 0);
 			}
+			
+			features.m_enum_to_str.get(c).put(0, "0");
+			features.m_enum_to_str.get(c).put(1, "1");
+			
+			features.m_str_to_enum.get(c).put("0", 0);
+			features.m_str_to_enum.get(c).put("1", 1);
 		}
+		return;
+		
 	}
 }
 
@@ -428,3 +420,13 @@ for(Entry<Double, Double> label : attrEntropy.entrySet()) {
 //for(int i = 0; i < labels.m_attr_name.size(); i++){
 //	System.out.println(labels.m_attr_name.get(i));
 //}
+
+//Print out the occurrence map for Node maxFeature()
+//for(Entry<Double, Integer> label : occurrences.entrySet()) {
+//    Double key = label.getKey();
+//    Integer value = label.getValue();
+//
+//    System.out.println(key + " => " + value);
+//}
+//
+//System.out.println("m_enum_to_str : " + labels.m_enum_to_str.get(0).get((int)maxLabel));

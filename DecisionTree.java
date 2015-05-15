@@ -37,9 +37,9 @@ public class DecisionTree extends SupervisedLearner {
 		
 			TreeMap<Double, Double> attrEntropy = new TreeMap<Double, Double>();
 			
-			for(int i = 0; i < features.cols(); i++){
-				double tempGain = calcInfoGain(features, labels, i);
-				attrEntropy.put((double)i, tempGain);
+			for(int i = 0; i < attributes.size(); i++){
+				double tempGain = calcInfoGain(features, labels, attributes.get(i).intValue());
+				attrEntropy.put(attributes.get(i), tempGain);
 			}
 			
 			double minGain = Double.MAX_VALUE;
@@ -116,7 +116,7 @@ public class DecisionTree extends SupervisedLearner {
 				attributes.remove(i);
 			}
 		}
-		
+				
 		//recursive calls on the matrices
 		for(Double d : labelPrtns.keySet()){
 			
@@ -127,6 +127,7 @@ public class DecisionTree extends SupervisedLearner {
 			newNode.setParent(features.attrValue((int) splittingAtt, d.intValue()));
 			currNode.addChild(newNode);
 			makeTree(featurePrtns.get(d), labelPrtns.get(d), newAttributeList, newNode, entropy);
+			
 		}
 		return;
 	}

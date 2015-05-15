@@ -29,6 +29,9 @@ public class Node {
 	public void addInstances(int i){
 		instances = i;
 	}
+	public int getInstances(){
+		return instances;
+	}
 	public void setName(String attr){
 		name = attr;
 	}
@@ -46,11 +49,25 @@ public class Node {
 		}
 		return tree;
 	}
+	
+	public void printNode(){
+		String tree = "\n" + name + "(" + attrID + ")\n		instances: " + instances;
+		for(Node n : children){
+			tree = tree + "	" + n.name;
+		}
+		
+		System.out.println(tree);
+	}
 	public void setAttrID(double id){
 		attrID = id;
 	}
+	public double getAttrID(){
+		return attrID;
+	}
 	
 	public double classify(double[] sample){
+		
+		printNode();
 		
 		if(instances != -1){
 			return attrID;

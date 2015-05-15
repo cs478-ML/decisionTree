@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 public class DecisionTree extends SupervisedLearner {
@@ -12,7 +11,7 @@ public class DecisionTree extends SupervisedLearner {
 		String commonNodeLabel = sameLabelNode(features, labels);
 				
 		//All features have the same label
-		if(commonNodeLabel != null){ 
+		if (commonNodeLabel != null){ 
 			currNode.setName(commonNodeLabel);
 			currNode.addInstances(labels.rows());
 			currNode.setAttrID(labels.m_str_to_enum.get(0).get(commonNodeLabel));
@@ -20,7 +19,7 @@ public class DecisionTree extends SupervisedLearner {
 		}
 		
 		//There are no more properties
-		if(attributes.size() == 0){
+		if (attributes.size() == 0){
 			currNode.addInstances(labels.rows());
 			Node n = maxFeature(features, labels);
 			currNode.setName(n.getName());
@@ -49,8 +48,7 @@ public class DecisionTree extends SupervisedLearner {
 					splittingAtt = d;
 				}
 			}
-		}
-		else { //accuracy
+		} else {
 			
 			TreeMap<Double, Double> attrAccuracy = new TreeMap<Double, Double>();
 			
@@ -78,7 +76,7 @@ public class DecisionTree extends SupervisedLearner {
 		TreeMap<Double, Matrix> labelPrtns = new TreeMap<Double, Matrix>();
 		TreeMap<Double, Matrix> featurePrtns = new TreeMap<Double, Matrix>();
 		
-		for(int i = 0; i < features.rows(); i++){
+		for (int i = 0; i < features.rows(); i++){
 			
 			double[] r = features.row(i);
 			double valueID = r[(int) splittingAtt];
@@ -106,14 +104,14 @@ public class DecisionTree extends SupervisedLearner {
 		ArrayList<Double> newAttributeList = new ArrayList<Double>(attributes);
 		
 		//remove the attribute that we are not interested in
-		for(int i = 0; i < newAttributeList.size(); i++){
+		for (int i = 0; i < newAttributeList.size(); i++){
 			if(newAttributeList.get(i) == splittingAtt){
 				newAttributeList.remove(i);
 			}
 		}
 		
 		//recursive calls on the matrices
-		for(Double d : labelPrtns.keySet()){
+		for (Double d : labelPrtns.keySet()){
 			
 			Node newNode = new Node();
 			newNode.setParent(features.attrValue((int) splittingAtt, d.intValue()));
@@ -142,9 +140,9 @@ public class DecisionTree extends SupervisedLearner {
 		
 		if(sameLabels){
 			return labels.m_enum_to_str.get(0).get((int)currNum);
-		}
-		else
+		} else {
 			return null;
+		}
 	}
 	
 	//Finds the maximum occurring label given the features
@@ -155,11 +153,11 @@ public class DecisionTree extends SupervisedLearner {
 		//Calculate the number of occurrences for each label
 		for(int i = 0; i < labels.rows(); i++){
 			double[] r = labels.row(i);
-			if(occurrences.containsKey(r[0])){
+			
+			if (occurrences.containsKey(r[0])){
 				int num = occurrences.get(r[0]);
 				occurrences.put(r[0], num + 1);
-			}
-			else {
+			} else {
 				occurrences.put(r[0], 1);
 			}
 		}
@@ -167,9 +165,9 @@ public class DecisionTree extends SupervisedLearner {
 		//Find the maximum occurring label
 		int max = 0;
 		double maxLabel = -1.0;
-		for(Double d : occurrences.keySet()){
+		for (Double d : occurrences.keySet()){
 			int num = occurrences.get(d);
-			if(num > max){
+			if (num > max){
 				max = num;
 				maxLabel = d;
 			}
@@ -180,42 +178,45 @@ public class DecisionTree extends SupervisedLearner {
 
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
+		features.print();
+		System.out.println("\n--------------END---------------\n");
+		
+		Matrix featuresCopy = new Matrix(features, 0, 0, features.rows(), features.cols());
 		
 		ArrayList<Double> attributes = new ArrayList<Double>();
-		
 		for(int i = 0; i < features.cols(); i++){
 			attributes.add((double) i);
 		}
 		
-		if (features.valueCount(0) == 0) discretizeData(features);
+		if (features.valueCount(0) == 0) discretizeData(featuresCopy);
 		
-		makeTree(features, labels, attributes, rootNode);
+		makeTree(featuresCopy, labels, attributes, rootNode);
 		
 		// print out our tree
-		System.out.println(rootNode.print());
+//		System.out.println(rootNode.print());
 	}
 
 	@Override
 	public void predict(double[] features, double[] labels) throws Exception {
 		// TODO Auto-generated method stub
-		System.out.println("Features: ");
-		for(int i = 0; i < features.length; i++){
-			System.out.println(features[i]);
-		}
+//		System.out.println("Features: ");
+//		for(int i = 0; i < features.length; i++){
+//			System.out.println(features[i]);
+//		}
 		double prediction = rootNode.classify(features);
 		labels[0] = prediction;
 		
 	}
-	
-	
-	private void discretizeData (Matrix features) {
 		
+	private void discretizeData (Matrix features) {
+				
 //		for (int c = 0; c < features.cols(); c++) {
 //			double min = features.columnMin(c);
 //			double max = features.columnMax(c);
 //			
-//			double interval1 = min + (max - min)/3;
-//			double interval2 = interval1 + (max - min)/3;
+//			double interval1 = min + (max - min)/4;
+//			double interval2 = interval1 + (max - min)/4;
+//			double interval3 = interval2 + (max - min)/4;
 //						
 //			for (int r = 0; r < features.rows(); r++) {
 //				
@@ -227,8 +228,16 @@ public class DecisionTree extends SupervisedLearner {
 //				else
 //					features.set(r, c, 2);
 //			}
+//			
+//			features.m_enum_to_str.get(c).put(0, "0");
+//			features.m_enum_to_str.get(c).put(1, "1");
+//			features.m_enum_to_str.get(c).put(2, "2");
+//			
+//			features.m_str_to_enum.get(c).put("0", 0);
+//			features.m_str_to_enum.get(c).put("1", 1);
+//			features.m_str_to_enum.get(c).put("2", 2);
 //		}
-		
+//				
 		for (int c = 0; c < features.cols(); c++) {
 			double mean = features.columnMean(c);
 						
@@ -247,7 +256,5 @@ public class DecisionTree extends SupervisedLearner {
 			features.m_str_to_enum.get(c).put("0", 0);
 			features.m_str_to_enum.get(c).put("1", 1);
 		}
-		return;
-		
 	}
 }

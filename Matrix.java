@@ -21,6 +21,8 @@ public class Matrix {
 	ArrayList< String > m_attr_name;
 	ArrayList< TreeMap<String, Integer> > m_str_to_enum;
 	ArrayList< TreeMap<Integer, String> > m_enum_to_str;
+	
+	public boolean discrete;
 
 	static double MISSING = Double.MAX_VALUE; // representation of missing values in the dataset
 
@@ -29,6 +31,11 @@ public class Matrix {
 
 	// Copies the specified portion of that matrix into this matrix
 	public Matrix(Matrix that, int rowStart, int colStart, int rowCount, int colCount) {
+		
+		if(that.discrete){
+			discrete = true;
+		}
+		
 		m_data = new ArrayList< double[] >();
 		for(int j = 0; j < rowCount; j++) {
 			double[] rowSrc = that.row(rowStart + j);
@@ -187,6 +194,56 @@ public class Matrix {
 				}
 			}
 		}
+	}
+	
+	public void discretizeData () {
+
+		for (int c = 0; c < cols(); c++) {
+
+			if(valueCount(c) == 0){
+				double min = columnMin(c);
+				double max = columnMax(c);
+
+				double interval1 = min + (max - min)/3.0;
+				double interval2 = min + 2*(max - min)/3.0;
+
+				for (int r = 0; r < rows(); r++) {
+
+					//DISCO-TIZE!
+					if (get(r, c) < interval1)
+						set(r, c, 0);
+					else if (get(r, c) < interval2)
+						set(r, c, 1);
+					else
+						set(r, c, 2);
+				}
+
+				m_enum_to_str.get(c).put(0, "0");
+				m_enum_to_str.get(c).put(1, "1");
+				m_enum_to_str.get(c).put(2, "2");
+
+				m_str_to_enum.get(c).put("0", 0);
+				m_str_to_enum.get(c).put("1", 1);
+				m_str_to_enum.get(c).put("2", 2);
+			}
+		}	
+		return;
+
+	}
+	
+	public void handleMissingVals(Random rand){
+				
+		for(int i = 0; i < rows(); i++){
+			double[] r = row(i);
+			for(int j = 0; j < r.length; j++){
+				if(!m_enum_to_str.get(j).containsKey((int)r[j])){
+					int numOfVals = m_enum_to_str.get(j).size();
+					int randomValue = rand.nextInt() % valueCount(j);
+					set(i,j,(double)randomValue);//does this need to be a double?
+				}
+			}
+		}
+		
 	}
 
 	// Returns the number of rows in the matrix

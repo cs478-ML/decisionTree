@@ -46,6 +46,13 @@ public class MLSystemManager {
 		// Load the ARFF file
 		Matrix data = new Matrix();
 		data.loadArff(fileName);
+		
+		//Handle missing values
+		data.handleMissingVals(rand);
+		
+		//Discretize the data
+		data.discretizeData();
+		
 		if (normalize)
 		{
 			System.out.println("Using normalized data\n");
@@ -150,6 +157,9 @@ public class MLSystemManager {
 			for(int j = 0; j < reps; j++) {
 				data.shuffle(rand);
 				for (int i = 0; i < folds; i++) {
+					
+					//System.out.println("\n\n ***************** N E W ** F O L D *********************\n");
+					
 					int begin = i * data.rows() / folds;
 					int end = (i + 1) * data.rows() / folds;
 					Matrix trainFeatures = new Matrix(data, 0, 0, begin, data.cols() - 1);

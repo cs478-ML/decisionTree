@@ -55,6 +55,8 @@ public class DecisionTree extends SupervisedLearner {
 		}
 		else { //accuracy
 			
+			double wholeSetAccuracy = calcAccuracy(labels);
+			
 			TreeMap<Double, Double> attrAccuracy = new TreeMap<Double, Double>();
 			
 			for(int i = 0; i < attributes.size(); i++){
@@ -72,6 +74,13 @@ public class DecisionTree extends SupervisedLearner {
 					splittingAtt = d;
 				}
 			}
+			
+//			if(maxGain <= wholeSetAccuracy){
+//				Node n = maxFeature(features, labels);
+//				currNode.setName(n.getName());
+//				currNode.setAttrID(labels.m_str_to_enum.get(0).get(n.getName()));
+//				return;
+//			}
 
 		}
 		
@@ -315,80 +324,37 @@ public class DecisionTree extends SupervisedLearner {
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
 		
+		System.out.println("------------Features------------");
+		features.print();
+		
 		ArrayList<Double> attributes = new ArrayList<Double>();
 		
 		for(int i = 0; i < features.cols(); i++){
 			attributes.add((double) i);
 		}
 		
-		//this line assumes that if the first column is continuous that all of the data is continuous
-		if (features.valueCount(0) == 0)
-			discretizeData(features);
-
-		
-		boolean entropy = true;
+		boolean entropy = false;
 		
 		rootNode = new Node();
 		makeTree(features, labels, attributes, rootNode, entropy);
-		System.out.println(rootNode.print());
+//		System.out.println(rootNode.print());
 
 	}
 
 	@Override
 	public void predict(double[] features, double[] labels) throws Exception {
 		// TODO Auto-generated method stub
-		System.out.println("Features: ");
-		for(int i = 0; i < features.length; i++){
-			System.out.println(features[i]);
-		}
+//		System.out.println("Features: ");
+//		for(int i = 0; i < features.length; i++){
+//			System.out.println(features[i]);
+//		}
 		double prediction = rootNode.classify(features);
 		labels[0] = prediction;
 		
 	}
 	
 	
-	private void discretizeData (Matrix features) {
-		
-//		for (int c = 0; c < features.cols(); c++) {
-//			double min = features.columnMin(c);
-//			double max = features.columnMax(c);
-//			
-//			double interval1 = min + (max - min)/3;
-//			double interval2 = interval1 + (max - min)/3;
-//						
-//			for (int r = 0; r < features.rows(); r++) {
-//				
-//				//DISCO-TIZE!
-//				if (features.get(r, c) < interval1)
-//					features.set(r, c, 0);
-//				else if (features.get(r, c) < interval2)
-//					features.set(r, c, 1);
-//				else
-//					features.set(r, c, 2);
-//			}
-//		}
-		
-		for (int c = 0; c < features.cols(); c++) {
-			double mean = features.columnMean(c);
-						
-			for (int r = 0; r < features.rows(); r++) {
-				
-				//DISCO-TIZE!
-				if (features.get(r, c) > mean)
-					features.set(r, c, 1);
-				else
-					features.set(r, c, 0);
-			}
-			
-			features.m_enum_to_str.get(c).put(0, "0");
-			features.m_enum_to_str.get(c).put(1, "1");
-			
-			features.m_str_to_enum.get(c).put("0", 0);
-			features.m_str_to_enum.get(c).put("1", 1);
-		}
-		return;
-		
-	}
+	
 }
 
 
@@ -431,3 +397,41 @@ for(Entry<Double, Double> label : attrEntropy.entrySet()) {
 //}
 //
 //System.out.println("m_enum_to_str : " + labels.m_enum_to_str.get(0).get((int)maxLabel));
+
+
+////Trinary discretization
+//for (int c = 0; c < features.cols(); c++) {
+//double min = features.columnMin(c);
+//double max = features.columnMax(c);
+//
+//double interval1 = min + (max - min)/3;
+//double interval2 = interval1 + (max - min)/3;
+//			
+//for (int r = 0; r < features.rows(); r++) {
+//	
+//	//DISCO-TIZE!
+//	if (features.get(r, c) < interval1)
+//		features.set(r, c, 0);
+//	else if (features.get(r, c) < interval2)
+//		features.set(r, c, 1);
+//	else
+//		features.set(r, c, 2);
+//}
+//}
+
+///////Binary discretization
+//for (int c = 0; c < features.cols(); c++) {
+//double mean = features.columnMean(c);
+//			
+//for (int r = 0; r < features.rows(); r++) {
+//	
+//	//DISCO-TIZE!
+//	if (features.get(r, c) > mean)
+//		features.set(r, c, 1);
+//	else
+//		features.set(r, c, 0);
+//}
+//
+//
+//
+//}

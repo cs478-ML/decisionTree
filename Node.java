@@ -67,13 +67,18 @@ public class Node {
 	
 	public double classify(double[] sample){
 		
-		printNode();
+		//printNode();
 		
 		if(instances != -1){
 			return attrID;
 		}
 		else {
 			double nextNodeIndex = sample[(int)attrID];
+			
+
+			if (nextNodeIndex > children.size() - 1) {
+				nextNodeIndex = children.size() - 1;
+			}
 			return children.get((int)nextNodeIndex).classify(sample);
 		}
 	}

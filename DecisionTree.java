@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 
@@ -14,19 +13,40 @@ public class DecisionTree extends SupervisedLearner {
 	
 	private void makeTree(Matrix features, Matrix labels, ArrayList<Double> attributes, Node currNode, boolean entropy){ 
 		
-		String commonNodeLabel = sameLabelNode(features, labels);
-		if(commonNodeLabel != null){ //All features have the same label
-			currNode.setName(commonNodeLabel);
+		//Base Cases for Recursion
+		
+		//what about if features is empty?
+		
+		String labelForAllNodes = sameLabelNode(features, labels);
+		if(labelForAllNodes != null){ //All features have the same label
+			currNode.setName(labelForAllNodes);
 			currNode.addInstances(labels.rows());
-			currNode.setAttrID(labels.m_str_to_enum.get(0).get(commonNodeLabel));
+			currNode.setAttrID(labels.m_str_to_enum.get(0).get(labelForAllNodes));
 			return;
 		}
 		if(attributes.size() == 0){//There are no more properties
+			String maxLabel = maxAttrVal(labels);
+			currNode.setName(maxLabel);
 			currNode.addInstances(labels.rows());
-			Node n = maxFeature(features, labels);
-			currNode.setName(n.getName());
-			currNode.setAttrID(labels.m_str_to_enum.get(0).get(n.getName()));
+			currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
 			return;
+		}
+		if(attributes.size() == 1){//check to see if for that attribute, there is no variation
+			double attr = attributes.get(0);
+			double val = features.row(0)[(int)attr];
+			boolean same = false;
+			for(int i = 0; i < features.rows(); i++){
+				if(val != features.row(i)[(int)attr]){
+					break;
+				}
+			}
+			if(same){
+				String maxLabel = maxAttrVal(labels);
+				currNode.setName(maxLabel);
+				currNode.addInstances(labels.rows());
+				currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
+				return;
+			}
 		}
 		
 		//Passed Base cases:
@@ -52,6 +72,14 @@ public class DecisionTree extends SupervisedLearner {
 					splittingAtt = d;
 				}
 			}
+			
+			//maybe don't split if entropy is 0 or less
+//			if(minGain <= 0){
+//				String maxLabel = maxAttrVal(labels);
+//				currNode.setName(maxLabel);
+//				currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
+//				return;
+//			}
 		}
 		else { //accuracy
 			
@@ -75,12 +103,13 @@ public class DecisionTree extends SupervisedLearner {
 				}
 			}
 			
-//			if(maxGain <= wholeSetAccuracy){
-//				Node n = maxFeature(features, labels);
-//				currNode.setName(n.getName());
-//				currNode.setAttrID(labels.m_str_to_enum.get(0).get(n.getName()));
-//				return;
-//			}
+			//Check to see if wholeSetAccuracy improved
+			if(maxGain < wholeSetAccuracy){
+				String maxLabel = maxAttrVal(labels);
+				currNode.setName(maxLabel);
+				currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
+				return;
+			}
 
 		}
 		
@@ -89,6 +118,7 @@ public class DecisionTree extends SupervisedLearner {
 		
 		TreeMap<Double, Matrix> labelPrtns = new TreeMap<Double, Matrix>();
 		TreeMap<Double, Matrix> featurePrtns = new TreeMap<Double, Matrix>();
+		
 		
 		for(int i = 0; i < features.rows(); i++){////////changed the index here
 			double[] r = features.row(i);
@@ -119,6 +149,15 @@ public class DecisionTree extends SupervisedLearner {
 			}
 		}
 		
+		//Check to make sure all the values were accounted for:
+		for(int i = 0; i < features.valueCount((int)splittingAtt); i++){
+			double missingVal = i;
+			if(!featurePrtns.containsKey(missingVal)){
+				featurePrtns.put(missingVal, null);
+				labelPrtns.put(missingVal, null);
+			}
+		}
+		
 		//create the new list of attributes we are interested in
 		for(int i = 0; i < attributes.size(); i++){
 			if(attributes.get(i) == splittingAtt){
@@ -135,7 +174,16 @@ public class DecisionTree extends SupervisedLearner {
 			Node newNode = new Node();
 			newNode.setParent(features.attrValue((int) splittingAtt, d.intValue()));
 			currNode.addChild(newNode);
-			makeTree(featurePrtns.get(d), labelPrtns.get(d), newAttributeList, newNode, entropy);
+			if(featurePrtns.get(d) != null){
+				makeTree(featurePrtns.get(d), labelPrtns.get(d), newAttributeList, newNode, entropy);
+			}
+			else {
+				String maxLabel = maxAttrVal(labels);
+				newNode.setName(maxLabel);
+				newNode.addInstances(0);
+				newNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
+				//return; ?
+			}
 			
 		}
 		return;
@@ -153,7 +201,6 @@ public class DecisionTree extends SupervisedLearner {
 			sameLabels = false;
 			currLabelRow = labels.row(i);
 			if(currNum != currLabelRow[0]){
-				//System.out.println("Not all the same");
 				break;
 			}
 			sameLabels = true;
@@ -166,35 +213,13 @@ public class DecisionTree extends SupervisedLearner {
 			return null;
 	}
 	
-	//Finds the maximum occurring label given the features
-	private Node maxFeature(Matrix features, Matrix labels){
+	//Finds the maximum occurring label
+	private String maxAttrVal(Matrix labels){
 		
-		TreeMap<Double, Integer> occurrences = new TreeMap<Double, Integer>();
-		
-		//Calculate the number of occurrences for each label
-		for(int i = 0; i < labels.rows(); i++){
-			double[] r = labels.row(i);
-			if(occurrences.containsKey(r[0])){
-				int num = occurrences.get(r[0]);
-				occurrences.put(r[0], num + 1);
-			}
-			else {
-				occurrences.put(r[0], 1);
-			}
-		}
-		
-		//Find the maximum occurring label
-		int max = 0;
-		double maxLabel = -1.0;
-		for(Double d : occurrences.keySet()){
-			int num = occurrences.get(d);
-			if(num > max){
-				max = num;
-				maxLabel = d;
-			}
-		}
+		double avLabel = labels.columnMean(0);
+		double maxLabel = Math.rint(avLabel);
 
-		return new Node(labels.m_enum_to_str.get(0).get((int)maxLabel));
+		return labels.m_enum_to_str.get(0).get((int)maxLabel);
 	}
 
 	//Calculates the accuracy of a given data set
@@ -324,16 +349,13 @@ public class DecisionTree extends SupervisedLearner {
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
 		
-		System.out.println("------------Features------------");
-		features.print();
-		
 		ArrayList<Double> attributes = new ArrayList<Double>();
 		
 		for(int i = 0; i < features.cols(); i++){
 			attributes.add((double) i);
 		}
 		
-		boolean entropy = false;
+		boolean entropy = true;
 		
 		rootNode = new Node();
 		makeTree(features, labels, attributes, rootNode, entropy);

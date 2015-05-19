@@ -105,7 +105,7 @@ public class Matrix {
 					String firstToken = t.next().toUpperCase();
 					
 					if (firstToken.equals("@RELATION")) {
-						String datasetName = t.nextLine();
+//						String datasetName = t.nextLine();
 					}
 					
 					if (firstToken.equals("@ATTRIBUTE")) {
@@ -140,15 +140,19 @@ public class Matrix {
 										vals++;
 									}
 								}
+								v.close();
 							}
 							catch (Exception e) {
+								u.close();
 								throw new Exception("Error parsing line: " + line + "\n" + e.toString());
 							}
 						}
+						u.close();
 					}
 					if (firstToken.equals("@DATA")) {
 						READDATA = true;
 					}
+					t.close();
 				}
 				else {
 					double[] newrow = new double[cols()];
@@ -186,6 +190,7 @@ public class Matrix {
 								curPos++;
 							}
 						}
+						t.close();
 					}
 					catch(Exception e) {
 						throw new Exception("Error parsing line: " + line + "\n" + e.toString());
@@ -194,10 +199,34 @@ public class Matrix {
 				}
 			}
 		}
+		s.close();
 	}
 	
 	public void discretizeData () {
-
+		
+//	/////Binary discretization
+//		for (int c = 0; c < cols(); c++) {
+//			
+//			if(valueCount(c) == 0){
+//				double mean = columnMean(c);
+//				
+//				for (int r = 0; r < rows(); r++) {
+//					
+//					//DISCO-TIZE!
+//					if (get(r, c) > mean)
+//						set(r, c, 1);
+//					else
+//						set(r, c, 0);
+//				}
+//				
+//				m_enum_to_str.get(c).put(0, "0");
+//				m_enum_to_str.get(c).put(1, "1");
+//				
+//				m_str_to_enum.get(c).put("0", 0);
+//				m_str_to_enum.get(c).put("1", 1);
+//			}
+//		}
+		///Trinary discretization
 		for (int c = 0; c < cols(); c++) {
 
 			if(valueCount(c) == 0){
@@ -231,15 +260,15 @@ public class Matrix {
 
 	}
 	
-	public void handleMissingVals(Random rand){
+	public void handleMissingVals(){
 				
 		for(int i = 0; i < rows(); i++){
 			double[] r = row(i);
 			for(int j = 0; j < r.length; j++){
-				if(!m_enum_to_str.get(j).containsKey((int)r[j])){
-					int numOfVals = m_enum_to_str.get(j).size();
-					int randomValue = rand.nextInt() % valueCount(j);
-					set(i,j,(double)randomValue);//does this need to be a double?
+				if(get(i,j) == MISSING){
+					double colAvg = columnMean(j);
+					double newVal = Math.rint(colAvg);
+					set(i,j,newVal);
 				}
 			}
 		}
@@ -419,3 +448,12 @@ public class Matrix {
 		}
 	}
 }
+
+
+//////another way to assign missing vals
+//if(!m_enum_to_str.get(j).containsKey((int)r[j])){
+//int numOfVals = valueCount(j);
+//int randomValue = rand.nextInt() % numOfVals;
+//randomValue = Math.abs(randomValue);
+//set(i,j,(double)randomValue);//does this need to be a double?
+//}

@@ -13,10 +13,7 @@ public class DecisionTree extends SupervisedLearner {
 	
 	private void makeTree(Matrix features, Matrix labels, ArrayList<Double> attributes, Node currNode, boolean entropy){ 
 		
-		//Base Cases for Recursion
-		
-		//what about if features is empty?
-		
+		//Base Cases for Recursion		
 		String labelForAllNodes = sameLabelNode(features, labels);
 		if(labelForAllNodes != null){ //All features have the same label
 			currNode.setName(labelForAllNodes);
@@ -30,23 +27,6 @@ public class DecisionTree extends SupervisedLearner {
 			currNode.addInstances(labels.rows());
 			currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
 			return;
-		}
-		if(attributes.size() == 1){//check to see if for that attribute, there is no variation
-			double attr = attributes.get(0);
-			double val = features.row(0)[(int)attr];
-			boolean same = false;
-			for(int i = 0; i < features.rows(); i++){
-				if(val != features.row(i)[(int)attr]){
-					break;
-				}
-			}
-			if(same){
-				String maxLabel = maxAttrVal(labels);
-				currNode.setName(maxLabel);
-				currNode.addInstances(labels.rows());
-				currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
-				return;
-			}
 		}
 		
 		//Passed Base cases:
@@ -73,38 +53,23 @@ public class DecisionTree extends SupervisedLearner {
 				}
 			}
 			
-			//maybe don't split if entropy is 0 or less
-//			if(minGain <= 0){
-//				String maxLabel = maxAttrVal(labels);
-//				currNode.setName(maxLabel);
-//				currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
-//				return;
-//			}
 		}
 		else { //accuracy
 			
 			double wholeSetAccuracy = calcAccuracy(labels);
 			
-			TreeMap<Double, Double> attrAccuracy = new TreeMap<Double, Double>();
+			double maxAcc = 0;
 			
 			for(int i = 0; i < attributes.size(); i++){
 				double tempGain = calcAccGain(features, labels, attributes.get(i).intValue());
-				attrAccuracy.put(attributes.get(i), tempGain);
-			}
-			
-			double maxGain = -1;
-			
-			//Find the maximum accuracy
-			for(double d : attrAccuracy.keySet()){
-				double tempGain = attrAccuracy.get(d);
-				if(tempGain > maxGain){
-					maxGain = tempGain;
-					splittingAtt = d;
+				if(tempGain > maxAcc){
+					maxAcc = tempGain;
+					splittingAtt = attributes.get(i);
 				}
 			}
 			
 			//Check to see if wholeSetAccuracy improved
-			if(maxGain < wholeSetAccuracy){
+			if(maxAcc < wholeSetAccuracy){
 				String maxLabel = maxAttrVal(labels);
 				currNode.setName(maxLabel);
 				currNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
@@ -182,12 +147,12 @@ public class DecisionTree extends SupervisedLearner {
 				newNode.setName(maxLabel);
 				newNode.addInstances(0);
 				newNode.setAttrID(labels.m_str_to_enum.get(0).get(maxLabel));
-				//return; ?
 			}
 			
 		}
 		return;
 	}
+
 	
 	//Function that checks if all the features have the same label
 	// Returns a node with the common label or null if none exists
@@ -365,11 +330,6 @@ public class DecisionTree extends SupervisedLearner {
 
 	@Override
 	public void predict(double[] features, double[] labels) throws Exception {
-		// TODO Auto-generated method stub
-//		System.out.println("Features: ");
-//		for(int i = 0; i < features.length; i++){
-//			System.out.println(features[i]);
-//		}
 		double prediction = rootNode.classify(features);
 		labels[0] = prediction;
 		
@@ -378,82 +338,3 @@ public class DecisionTree extends SupervisedLearner {
 	
 	
 }
-
-
-//		double ent = calcEntropy(labels);
-//		System.out.println("Entropy of the system: " + ent);
-
-//		double acc = calcAccuracy(labels);
-//		System.out.println("Accuracy of the data: " + acc);
-
-/*		
-	//print the map for Entropy
-for(Entry<Double, Double> label : attrEntropy.entrySet()) {
-      Double key = label.getKey();
-      Double value = label.getValue();
-
-      System.out.println(key + " => " + value);
-}
-*/
-
-//System.out.println("------------Features------------");
-//features.print();
-//System.out.println("attribute list");
-//for(int i = 0; i < features.m_attr_name.size(); i++){
-//	System.out.println(features.m_attr_name.get(i));
-//}
-
-//System.out.println("------------Labels------------");
-//labels.print();
-//System.out.println("attribute list");
-//for(int i = 0; i < labels.m_attr_name.size(); i++){
-//	System.out.println(labels.m_attr_name.get(i));
-//}
-
-//Print out the occurrence map for Node maxFeature()
-//for(Entry<Double, Integer> label : occurrences.entrySet()) {
-//    Double key = label.getKey();
-//    Integer value = label.getValue();
-//
-//    System.out.println(key + " => " + value);
-//}
-//
-//System.out.println("m_enum_to_str : " + labels.m_enum_to_str.get(0).get((int)maxLabel));
-
-
-////Trinary discretization
-//for (int c = 0; c < features.cols(); c++) {
-//double min = features.columnMin(c);
-//double max = features.columnMax(c);
-//
-//double interval1 = min + (max - min)/3;
-//double interval2 = interval1 + (max - min)/3;
-//			
-//for (int r = 0; r < features.rows(); r++) {
-//	
-//	//DISCO-TIZE!
-//	if (features.get(r, c) < interval1)
-//		features.set(r, c, 0);
-//	else if (features.get(r, c) < interval2)
-//		features.set(r, c, 1);
-//	else
-//		features.set(r, c, 2);
-//}
-//}
-
-///////Binary discretization
-//for (int c = 0; c < features.cols(); c++) {
-//double mean = features.columnMean(c);
-//			
-//for (int r = 0; r < features.rows(); r++) {
-//	
-//	//DISCO-TIZE!
-//	if (features.get(r, c) > mean)
-//		features.set(r, c, 1);
-//	else
-//		features.set(r, c, 0);
-//}
-//
-//
-//
-//}

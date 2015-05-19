@@ -4,9 +4,7 @@
 // ----------------------------------------------------------------
 
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.io.File;
 
 
 public class MLSystemManager {
@@ -47,11 +45,11 @@ public class MLSystemManager {
 		Matrix data = new Matrix();
 		data.loadArff(fileName);
 		
-		//Handle missing values
-		data.handleMissingVals(rand);
-		
 		//Discretize the data
 		data.discretizeData();
+		
+		//Handle missing values
+		data.handleMissingVals();
 		
 		if (normalize)
 		{
@@ -158,7 +156,7 @@ public class MLSystemManager {
 				data.shuffle(rand);
 				for (int i = 0; i < folds; i++) {
 					
-					//System.out.println("\n\n ***************** N E W ** F O L D *********************\n");
+//					System.out.println("\n\n ***************** N E W ** F O L D *********************\n");
 					
 					int begin = i * data.rows() / folds;
 					int end = (i + 1) * data.rows() / folds;

@@ -67,9 +67,11 @@ public class Node {
 	
 	public double classify(double[] sample){
 		
-		//printNode();
-		
+//		printNode();
 		if(instances != -1){
+			return attrID;
+		}
+		if(children.size() == 0){
 			return attrID;
 		}
 		else {

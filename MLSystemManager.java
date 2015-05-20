@@ -47,11 +47,11 @@ public class MLSystemManager {
 		Matrix data = new Matrix();
 		data.loadArff(fileName);
 		
-		//Handle missing values
-		data.handleMissingVals(rand);
-		
 		//Discretize the data
 		data.discretizeData();
+		
+		//Handle missing values
+		data.handleMissingVals(rand);
 		
 		if (normalize)
 		{

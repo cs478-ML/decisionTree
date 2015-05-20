@@ -9,6 +9,7 @@ public class Node {
 	private int instances;
 	
 	private double attrID;
+	private double attrID2 = -1;
 	
 	public Node(){
 		name = "";
@@ -58,11 +59,20 @@ public class Node {
 		
 		System.out.println(tree);
 	}
+	
+	public void populate (String attr, int i, double id) {
+		name = attr;
+		instances = i;
+		attrID = id;
+	}
+	
 	public void setAttrID(double id){
 		attrID = id;
 	}
-	public double getAttrID(){
-		return attrID;
+	
+	public void setAttrID(double attr1, double attr2){
+		attrID = attr1;
+		attrID2 = attr2;
 	}
 	
 	public double classify(double[] sample){
@@ -72,15 +82,18 @@ public class Node {
 		if(instances != -1){
 			return attrID;
 		}
-		else {
-			double nextNodeIndex = sample[(int)attrID];
-			
-
-			if (nextNodeIndex > children.size() - 1) {
-				nextNodeIndex = children.size() - 1;
-			}
-			return children.get((int)nextNodeIndex).classify(sample);
+		
+		double nextNodeIndex = sample[(int)attrID];
+		
+		if (nextNodeIndex > children.size() - 1) {
+			nextNodeIndex = children.size() - 1;
 		}
+		if (children.size() == 0)
+			return attrID;
+		if (nextNodeIndex == -1) {
+			System.out.println("-1");
+		}
+		return children.get((int)nextNodeIndex).classify(sample);
 	}
 
 }

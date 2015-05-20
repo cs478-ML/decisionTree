@@ -239,7 +239,7 @@ public class Matrix {
 				if(!m_enum_to_str.get(j).containsKey((int)r[j])){
 					int numOfVals = m_enum_to_str.get(j).size();
 					int randomValue = rand.nextInt() % valueCount(j);
-					set(i,j,(double)randomValue);//does this need to be a double?
+					set(i,j,(double)Math.abs(randomValue));//does this need to be a double?
 				}
 			}
 		}
